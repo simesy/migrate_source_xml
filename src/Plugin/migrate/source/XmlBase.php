@@ -36,7 +36,7 @@ abstract class XmlBase extends SourcePluginBase {
    *
    * @var array
    */
-  protected $sourceUrls = array();
+  protected $sourceUrls = [];
 
   /**
    * An array of namespaces to explicitly register before Xpath queries.
@@ -71,7 +71,7 @@ abstract class XmlBase extends SourcePluginBase {
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration, array $namespaces = array()) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration, array $namespaces = []) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $migration);
 
     if (empty($configuration['iterator_class'])) {
@@ -82,7 +82,7 @@ abstract class XmlBase extends SourcePluginBase {
     }
 
     if (!is_array($configuration['urls'])) {
-      $configuration['urls'] = array($configuration['urls']);
+      $configuration['urls'] = [$configuration['urls']];
     }
 
     $this->sourceUrls = $configuration['urls'];
@@ -202,7 +202,7 @@ abstract class XmlBase extends SourcePluginBase {
    * Lists the namespaces found in the source document(s).
    */
   public function namespaces() {
-    return array();
+    return [];
   }
 
 }

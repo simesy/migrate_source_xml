@@ -64,7 +64,7 @@ class MigrateXmlIterator implements \Iterator {
    *
    * @var array
    */
-  protected $parentElementsOfInterest = array();
+  protected $parentElementsOfInterest = [];
 
   /**
    * Constructs a new MigrateXmlIterator.

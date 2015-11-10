@@ -32,11 +32,11 @@ class MigrateXmlReader implements \Iterator {
    * Array of the element names from the query.
    *
    * 0-based from the first (root) element. For example, '//file/article' would
-   * be stored as array(0 => 'file', 1 => 'article').
+   * be stored as [0 => 'file', 1 => 'article'].
    *
    * @var array
    */
-  protected $elementsToMatch = array();
+  protected $elementsToMatch = [];
 
   /**
    * An optional xpath predicate.
@@ -53,11 +53,11 @@ class MigrateXmlReader implements \Iterator {
    *
    * For example, if in an XML string like '<file><article>...</article></file>'
    * we are positioned within the article element, currentPath will be
-   * array(0 => 'file', 1 => 'article').
+   * [0 => 'file', 1 => 'article'].
    *
    * @var array
    */
-  protected $currentPath = array();
+  protected $currentPath = [];
 
   /**
    * Retains all elements with a given name to support extraction from parents.
@@ -71,14 +71,14 @@ class MigrateXmlReader implements \Iterator {
    *
    * @var array
    */
-  protected $parentXpathCache = array();
+  protected $parentXpathCache = [];
 
   /**
    * Hash of the element names that should be captured into $parentXpathCache.
    *
    * @var array
    */
-  protected $parentElementsOfInterest = array();
+  protected $parentElementsOfInterest = [];
 
   /**
    * Query string used to retrieve the elements from the XML file.
@@ -143,7 +143,7 @@ class MigrateXmlReader implements \Iterator {
    *   so that they are available from getAncestorElement(). For efficiency, try
    *   to limit these to elements containing just text or small structures.
    */
-  public function __construct($xml_url, XmlBase $xml_source, $element_query, $id_query, $parent_elements_of_interest = array()) {
+  public function __construct($xml_url, XmlBase $xml_source, $element_query, $id_query, $parent_elements_of_interest = []) {
     $this->reader = new \XMLReader();
     $this->url = $xml_url;
     $this->elementQuery = $element_query;
@@ -181,7 +181,7 @@ class MigrateXmlReader implements \Iterator {
     $status = $this->reader->open($this->url, NULL, \LIBXML_NOWARNING);
 
     // Reset our path tracker.
-    $this->currentPath = array();
+    $this->currentPath = [];
 
     if ($status) {
       // Load the first matching element and its ID.
@@ -261,8 +261,8 @@ class MigrateXmlReader implements \Iterator {
                 $this->currentId = (string) reset($idnode);
               }
               else {
-                throw new \Exception(t('Failure retrieving ID, xpath: !xpath',
-                  array('!xpath' => $this->idQuery)));
+                throw new \Exception(t('Failure retrieving ID, xpath: @xpath',
+                  ['@xpath' => $this->idQuery]));
               }
               break;
             }
@@ -405,18 +405,18 @@ class MigrateXmlReader implements \Iterator {
     }
 
     return t(
-      "!libxmlerrorcodename !libxmlerrorcode: !libxmlerrormessage\n" .
-      "Line: !libxmlerrorline\n" .
-      "Column: !libxmlerrorcolumn\n" .
-      "File: !libxmlerrorfile",
-      array(
-        '!libxmlerrorcodename' => $error_code_name,
-        '!libxmlerrorcode' => $error->code,
-        '!libxmlerrormessage' => trim($error->message),
-        '!libxmlerrorline' => $error->line,
-        '!libxmlerrorcolumn' => $error->column,
-        '!libxmlerrorfile' => (($error->file)) ? $error->file : NULL,
-      )
+      "@libxmlerrorcodename @libxmlerrorcode: @libxmlerrormessage\n" .
+      "Line: @libxmlerrorline\n" .
+      "Column: @libxmlerrorcolumn\n" .
+      "File: @libxmlerrorfile",
+      [
+        '@libxmlerrorcodename' => $error_code_name,
+        '@libxmlerrorcode' => $error->code,
+        '@libxmlerrormessage' => trim($error->message),
+        '@libxmlerrorline' => $error->line,
+        '@libxmlerrorcolumn' => $error->column,
+        '@libxmlerrorfile' => (($error->file)) ? $error->file : NULL,
+      ]
     );
   }
 
