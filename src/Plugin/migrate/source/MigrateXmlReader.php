@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains Drupal\migrate_plus\Plugin\migrate\source\MigrateXmlReader.
+ * Contains Drupal\migrate_source_xml\Plugin\migrate\source\MigrateXmlReader.
  */
 
-namespace Drupal\migrate_plus\Plugin\migrate\source;
+namespace Drupal\migrate_source_xml\Plugin\migrate\source;
 
 use Drupal\migrate\MigrateMessage;
 
@@ -17,7 +17,7 @@ class MigrateXmlReader implements \Iterator {
   /**
    * The XMLReader we are encapsulating.
    *
-   * @var XMLReader
+   * @var \XMLReader
    */
   public $reader;
 
@@ -97,7 +97,7 @@ class MigrateXmlReader implements \Iterator {
   /**
    * Current element object when iterating.
    *
-   * @var SimpleXMLElement
+   * @var \SimpleXMLElement
    */
   protected $currentElement = NULL;
 
@@ -312,7 +312,7 @@ class MigrateXmlReader implements \Iterator {
   /**
    * Implementation of Iterator::current().
    *
-   * @return null|SimpleXMLElement
+   * @return \SimpleXMLElement|null
    *   Current item
    */
   public function current() {
@@ -389,13 +389,13 @@ class MigrateXmlReader implements \Iterator {
   /**
    * Parses a LibXMLError to a error message string.
    *
-   * @param LibXMLError $error
+   * @param \LibXMLError $error
    *   Error thrown by the XML.
    *
    * @return string
    *   Error message
    */
-  public static function parseLibXmlError(LibXMLError $error) {
+  public static function parseLibXmlError(\LibXMLError $error) {
     $error_code_name = 'Unknown Error';
     switch ($error->level) {
       case LIBXML_ERR_WARNING:

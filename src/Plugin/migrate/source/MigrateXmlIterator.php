@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\migrate_plus\Plugin\migrate\source\MigrateXmlIterator.
+ * Contains \Drupal\migrate_source_xml\Plugin\migrate\source\MigrateXmlIterator.
  */
 
-namespace Drupal\migrate_plus\Plugin\migrate\source;
+namespace Drupal\migrate_source_xml\Plugin\migrate\source;
 
 /**
  * Uses one or more MigrateXmlReaders to produce a single iterator.

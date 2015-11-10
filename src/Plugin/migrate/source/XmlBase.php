@@ -2,12 +2,13 @@
 
 /**
  * @file
- * Contains Drupal\migrate_plus\Plugin\migrate\source\XmlBase.
+ * Contains Drupal\migrate_source_xml\Plugin\migrate\source\XmlBase.
  */
 
-namespace Drupal\migrate_plus\Plugin\migrate\source;
+namespace Drupal\migrate_source_xml\Plugin\migrate\source;
 
 use Drupal\migrate\Entity\MigrationInterface;
+use Drupal\migrate\Plugin\migrate\source\SourcePluginBase;
 
 /**
  * Extension of SourcePluginBase to handle imports from XML files.
@@ -95,10 +96,10 @@ abstract class XmlBase extends SourcePluginBase {
   /**
    * Explicitly register namespaces on an XML element.
    *
-   * @param SimpleXMLElement $xml
+   * @param \SimpleXMLElement $xml
    *   A SimpleXMLElement to register the namespaces on.
    */
-  protected function registerNamespaces(SimpleXMLElement &$xml) {
+  protected function registerNamespaces(\SimpleXMLElement &$xml) {
     foreach ($this->namespaces as $prefix => $namespace) {
       $xml->registerXPathNamespace($prefix, $namespace);
     }
