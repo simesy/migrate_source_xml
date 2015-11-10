@@ -7,7 +7,7 @@
 
 namespace Drupal\migrate_source_xml\Plugin\migrate\source;
 
-use Drupal\migrate\MigrateMessage;
+use Drupal\migrate\MigrateException;
 
 /**
  * Makes an XMLReader object iterable over elements matching xpath-like syntax.
@@ -188,8 +188,8 @@ class MigrateXmlReader implements \Iterator {
       $this->next();
     }
     else {
-      MigrateMessage::display(t('Could not open XML file !url',
-                                array('!url' => $this->url)), 'error');
+      throw new MigrateException(t('Could not open XML file @url',
+        ['@url' => $this->url]), 'error');
     }
   }
 
@@ -221,14 +221,7 @@ class MigrateXmlReader implements \Iterator {
     else {
       foreach (libxml_get_errors() as $error) {
         $error_string = self::parseLibXmlError($error);
-        // @TODO, figure out how to reference the saveMessage object
-        // (MigrateExecutable?) in D8
-        if (FALSE && $migration = Migration::currentMigration()) {
-          $migration->saveMessage($error_string);
-        }
-        else {
-          MigrateMessage::display($error_string);
-        }
+        throw new MigrateException($error_string);
       }
       return FALSE;
     }
