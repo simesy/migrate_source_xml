@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains Drupal\migrate_source_xml\Plugin\migrate\source\XmlBase.
+ * Contains Drupal\migrate_source_xml\Plugin\migrate\source\Xml.
  */
 
 namespace Drupal\migrate_source_xml\Plugin\migrate\source;
@@ -11,13 +11,17 @@ use Drupal\migrate\Entity\MigrationInterface;
 use Drupal\migrate\Plugin\migrate\source\SourcePluginBase;
 
 /**
- * Extension of SourcePluginBase to handle imports from XML files.
+ * Source plugin for retrieving XML data.
+ *
+ * @MigrateSource(
+ *   id = "xml"
+ * )
  */
-abstract class XmlBase extends SourcePluginBase {
+class Xml extends SourcePluginBase {
   /**
    * The iterator object to employ while processing the source.
    *
-   * @var $reader MigrateXMLReader
+   * @var \Drupal\migrate_source_xml\Plugin\migrate\source\MigrateXMLReader
    */
   protected $reader;
 
@@ -55,18 +59,31 @@ abstract class XmlBase extends SourcePluginBase {
   protected $elementQuery = '';
 
   /**
-   * The query string used to retrieve the primary key value.
-   *
-   * @var string
-   */
-  protected $idQuery = '';
-
-  /**
    * The iterator class used to traverse the XML.
    *
    * @var string
    */
   protected $iteratorClass = '';
+
+  /**
+   * Information on the source fields to be extracted from the XML.
+   *
+   * @var array[]
+   *   Array of field information keyed by field names. A 'label' subkey
+   *   describes the field for migration tools; an 'xpath' subkey provides the
+   *   xpath (relative to the individual item) for obtaining the value.
+   */
+  protected $fields = [];
+
+  /**
+   * Description of the unique ID fields for this source.
+   *
+   * @var array[]
+   *   Each array member is keyed by a field name, with a value that is an
+   *   array with a single member with key 'type' and value a column type such
+   *   as 'integer'.
+   */
+  protected $ids = [];
 
   /**
    * {@inheritdoc}
@@ -75,7 +92,7 @@ abstract class XmlBase extends SourcePluginBase {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $migration);
 
     if (empty($configuration['iterator_class'])) {
-      $iterator_class = '\Drupal\migrate_plus\Plugin\migrate\source\MigrateXmlIterator';
+      $iterator_class = '\Drupal\migrate_source_xml\Plugin\migrate\source\MigrateXmlIterator';
     }
     else {
       $iterator_class = $configuration['iterator_class'];
@@ -87,10 +104,12 @@ abstract class XmlBase extends SourcePluginBase {
 
     $this->sourceUrls = $configuration['urls'];
     $this->activeUrl = NULL;
-    $this->elementQuery = $configuration['element_query'];
+    $this->elementQuery = $configuration['item_xpath'];
     $this->idQuery = $configuration['id_query'];
     $this->iteratorClass = $iterator_class;
     $this->namespaces = $namespaces;
+    $this->fields = $configuration['fields'];
+    $this->ids = $configuration['ids'];
   }
 
   /**
@@ -157,16 +176,6 @@ abstract class XmlBase extends SourcePluginBase {
   }
 
   /**
-   * Gets the xpath-like query from context node for source row id.
-   *
-   * @return string
-   *   The xpath-like query from context node for source row id.
-   */
-  public function idQuery() {
-    return $this->idQuery;
-  }
-
-  /**
    * Return a count of all available source records.
    *
    * @return int
@@ -176,9 +185,7 @@ abstract class XmlBase extends SourcePluginBase {
     $count = 0;
     foreach ($this->sourceUrls as $url) {
       $iterator = new $this->iteratorClass($this);
-      foreach ($iterator as $element) {
-        $count++;
-      }
+      $count += $iterator->count();
     }
 
     return $count;
@@ -203,6 +210,40 @@ abstract class XmlBase extends SourcePluginBase {
    */
   public function namespaces() {
     return [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function fields() {
+    $fields = [];
+    foreach ($fields as $field_name => $field_info) {
+      $fields[$field_name] = isset($field_info['label']) ? $field_info['label'] : $field_name;
+    }
+    return $fields;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getIds() {
+    return $this->ids;
+  }
+
+  /**
+   * Return the xpaths used to populate each configured field.
+   *
+   * @return string[]
+   *   Array of xpaths, keyed by field name.
+   */
+  public function fieldXpaths() {
+    $fields = [];
+    foreach ($this->configuration['fields'] as $field_name => $field_info) {
+      if (isset($field_info['xpath'])) {
+        $fields[$field_name] = $field_info['xpath'];
+      }
+    }
+    return $fields;
   }
 
 }

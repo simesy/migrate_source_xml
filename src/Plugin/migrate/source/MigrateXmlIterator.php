@@ -13,11 +13,11 @@ namespace Drupal\migrate_source_xml\Plugin\migrate\source;
  * This class is independent from MigrateXmlReader primarily to support multiple
  * input XML documents in a single migration.
  */
-class MigrateXmlIterator implements \Iterator {
+class MigrateXmlIterator implements \Iterator, \Countable {
   /**
-   * Reference to the XmlBase source plugin over which we are iterating.
+   * Reference to the Xml source plugin over which we are iterating.
    *
-   * @var XmlBase
+   * @var \Drupal\migrate_source_xml\Plugin\migrate\source\Xml
    */
   protected $xmlSource;
 
@@ -38,7 +38,7 @@ class MigrateXmlIterator implements \Iterator {
   /**
    * The MigrateXmlReader currently in use.
    *
-   * @var MigrateXmlReader
+   * @var \Drupal\migrate_source_xml\Plugin\migrate\source\MigrateXmlReader
    */
   protected $reader = NULL;
 
@@ -69,14 +69,14 @@ class MigrateXmlIterator implements \Iterator {
   /**
    * Constructs a new MigrateXmlIterator.
    */
-  public function __construct(XmlBase $xml_source) {
+  public function __construct(Xml $xml_source) {
     $this->xmlSource = $xml_source;
 
     $this->sourceUrls = $this->xmlSource->sourceUrls();
 
-    foreach ($this->xmlSource->fields() as $field => $description) {
-      if (substr($field, 0, 3) === '..\\') {
-        $this->parentElementsOfInterest[] = str_replace('..\\', '', $field);
+    foreach ($this->xmlSource->fieldXpaths() as $field_name => $xpath) {
+      if (substr($xpath, 0, 3) === '..\\') {
+        $this->parentElementsOfInterest[] = str_replace('..\\', '', $xpath);
       }
     }
   }
@@ -92,7 +92,7 @@ class MigrateXmlIterator implements \Iterator {
    *   The name of the MigrateXmlReader class.
    */
   public function getReaderClassName() {
-    return '\Drupal\migrate_plus\Plugin\migrate\source\MigrateXmlReader';
+    return '\Drupal\migrate_source_xml\Plugin\migrate\source\MigrateXmlReader';
   }
 
   /**
@@ -103,36 +103,7 @@ class MigrateXmlIterator implements \Iterator {
    */
   public function current() {
     if ($this->valid()) {
-      // Transform our \SimpleXMLElement to an associative array based on
-      // fields()
-      $source_row = [];
-      foreach ($this->xmlSource->fields() as $field => $description) {
-        $orig_field = $field;
-        // Is it looking at an ancestor?
-        $levels_up = 0;
-        while (substr($field, 0, 3) === '..\\') {
-          $levels_up++;
-          $field = substr($field, 3);
-        }
-        if ($levels_up) {
-          $node = $this->reader->getAncestorElements($levels_up, $field);
-        }
-        else {
-          $node = $this->currentElement->xpath($field);
-        }
-        if (is_array($node)) {
-          // Not sure of correct way to handle multiple-valued input fields.
-          if (count($node) > 1) {
-            foreach ($node as $match) {
-              $source_row[$orig_field][] = (string) $match;
-            }
-          }
-          else {
-            $source_row[$orig_field] = (string) reset($node);
-          }
-        }
-      }
-      return $source_row;
+      return $this->currentElement;
     }
     else {
       return NULL;
@@ -218,7 +189,6 @@ class MigrateXmlIterator implements \Iterator {
         $this->sourceUrls[$this->activeUrl],
               $this->xmlSource,
               $this->xmlSource->elementQuery(),
-              $this->xmlSource->idQuery(),
               $this->parentElementsOfInterest);
       $this->reader->rewind();
 
@@ -232,4 +202,14 @@ class MigrateXmlIterator implements \Iterator {
     return $status;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function count() {
+    $count = 0;
+    foreach ($this as $element) {
+      $count++;
+    }
+    return $count;
+  }
 }

@@ -88,13 +88,6 @@ class MigrateXmlReader implements \Iterator {
   public $elementQuery;
 
   /**
-   * Xpath query string used to retrieve the primary key from each element.
-   *
-   * @var string
-   */
-  public $idQuery;
-
-  /**
    * Current element object when iterating.
    *
    * @var \SimpleXMLElement
@@ -121,7 +114,7 @@ class MigrateXmlReader implements \Iterator {
   /**
    * Reference to the XmlBase source plugin we are serving as iterator for.
    *
-   * @var XmlBase
+   * @var \Drupal\migrate_source_xml\Plugin\migrate\source\Xml
    */
   protected $xmlSource;
 
@@ -130,24 +123,19 @@ class MigrateXmlReader implements \Iterator {
    *
    * @param string $xml_url
    *   URL of the XML file to be parsed.
-   * @param XmlBase $xml_source
+   * @param \Drupal\migrate_source_xml\Plugin\migrate\source\Xml $xml_source
    *   The xml source plugin.
    * @param string $element_query
    *   Query string in a restricted xpath format, for selecting elements to be.
-   * @param string $id_query
-   *   Query string to the unique identifier for an element,
-   *   relative to the root of that element. This supports the full
-   *   xpath syntax.
    * @param array $parent_elements_of_interest
    *   Named elements that should be preserved whenever they are encountered,
    *   so that they are available from getAncestorElement(). For efficiency, try
    *   to limit these to elements containing just text or small structures.
    */
-  public function __construct($xml_url, XmlBase $xml_source, $element_query, $id_query, $parent_elements_of_interest = []) {
+  public function __construct($xml_url, Xml $xml_source, $element_query, $parent_elements_of_interest = []) {
     $this->reader = new \XMLReader();
     $this->url = $xml_url;
     $this->elementQuery = $element_query;
-    $this->idQuery = $id_query;
     $this->xmlSource = $xml_source;
     $this->parentElementsOfInterest = array_flip($parent_elements_of_interest);
 
@@ -232,6 +220,7 @@ class MigrateXmlReader implements \Iterator {
    */
   public function next() {
     $this->currentElement = $this->currentId = NULL;
+    $target_element = NULL;
 
     // Loop over each node in the XML file, looking for elements at a path
     // matching the input query string (represented in $this->elementsToMatch).
@@ -252,18 +241,9 @@ class MigrateXmlReader implements \Iterator {
         if ($this->currentPath == $this->elementsToMatch) {
           // We're positioned to the right element path - build the SimpleXML
           // object to enable proper xpath predicate evaluation.
-          $sxml_elem = $this->getSimpleXml();
-          if ($sxml_elem !== FALSE) {
-            if (empty($this->xpathPredicate) || $this->predicateMatches($sxml_elem)) {
-              $this->currentElement = $sxml_elem;
-              $idnode = $this->currentElement->xpath($this->idQuery);
-              if (is_array($idnode)) {
-                $this->currentId = (string) reset($idnode);
-              }
-              else {
-                throw new \Exception(t('Failure retrieving ID, xpath: @xpath',
-                  ['@xpath' => $this->idQuery]));
-              }
+          $target_element = $this->getSimpleXml();
+          if ($target_element !== FALSE) {
+            if (empty($this->xpathPredicate) || $this->predicateMatches($target_element)) {
               break;
             }
           }
@@ -281,6 +261,17 @@ class MigrateXmlReader implements \Iterator {
             unset($this->parentXpathCache[$depth]);
           }
         }
+      }
+    }
+
+    if ($target_element) {
+      foreach ($this->xmlSource->fieldXpaths() as $field_name => $xpath) {
+        foreach ($target_element->xpath($xpath) as $value) {
+          $this->currentElement[$field_name] = (string) $value;
+        }
+      }
+      foreach ($this->xmlSource->getIds() as $id_field_name => $id_info) {
+        $this->currentId[$id_field_name] = $this->currentElement[$id_field_name];
       }
     }
   }
@@ -364,7 +355,7 @@ class MigrateXmlReader implements \Iterator {
    *   Indicates if current element is valid
    */
   public function valid() {
-    return $this->currentElement instanceof \SimpleXMLElement;
+    return $this->currentElement;
   }
 
   /**
