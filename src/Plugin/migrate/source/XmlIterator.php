@@ -2,18 +2,18 @@
 
 /**
  * @file
- * Contains \Drupal\migrate_source_xml\Plugin\migrate\source\MigrateXmlIterator.
+ * Contains \Drupal\migrate_source_xml\Plugin\migrate\source\XmlIterator.
  */
 
 namespace Drupal\migrate_source_xml\Plugin\migrate\source;
 
 /**
- * Uses one or more MigrateXmlReaders to produce a single iterator.
+ * Uses one or more XmlReaders to produce a single iterator.
  *
- * This class is independent from MigrateXmlReader primarily to support multiple
+ * This class is independent from XmlReader primarily to support multiple
  * input XML documents in a single migration.
  */
-class MigrateXmlIterator implements \Iterator, \Countable {
+class XmlIterator implements \Iterator, \Countable {
   /**
    * Reference to the Xml source plugin over which we are iterating.
    *
@@ -36,9 +36,9 @@ class MigrateXmlIterator implements \Iterator, \Countable {
   protected $activeUrl = NULL;
 
   /**
-   * The MigrateXmlReader currently in use.
+   * The XmlReader currently in use.
    *
-   * @var \Drupal\migrate_source_xml\Plugin\migrate\source\MigrateXmlReader
+   * @var \Drupal\migrate_source_xml\Plugin\migrate\source\XmlReader
    */
   protected $reader = NULL;
 
@@ -67,7 +67,7 @@ class MigrateXmlIterator implements \Iterator, \Countable {
   protected $parentElementsOfInterest = [];
 
   /**
-   * Constructs a new MigrateXmlIterator.
+   * Constructs a new XmlIterator.
    */
   public function __construct(Xml $xml_source) {
     $this->xmlSource = $xml_source;
@@ -82,17 +82,17 @@ class MigrateXmlIterator implements \Iterator, \Countable {
   }
 
   /**
-   * Returns the name of the MigrateXmlReader class to employ when iterating.
+   * Returns the name of the XmlReader class to employ when iterating.
    *
    * @todo
    *   Define an interface for this class so actual substitution of the default
    *   one would be cleaner.
    *
    * @return string
-   *   The name of the MigrateXmlReader class.
+   *   The name of the XmlReader class.
    */
   public function getReaderClassName() {
-    return '\Drupal\migrate_source_xml\Plugin\migrate\source\MigrateXmlReader';
+    return '\Drupal\migrate_source_xml\Plugin\migrate\source\XmlReader';
   }
 
   /**

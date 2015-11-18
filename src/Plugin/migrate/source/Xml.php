@@ -21,15 +21,15 @@ class Xml extends SourcePluginBase {
   /**
    * The iterator object to employ while processing the source.
    *
-   * @var \Drupal\migrate_source_xml\Plugin\migrate\source\MigrateXMLReader
+   * @var \Drupal\migrate_source_xml\Plugin\migrate\source\XMLReader
    */
   protected $reader;
 
   /**
-   * The MigrateXMLReader object serving as a cursor over the XML source.
+   * The XMLReader object serving as a cursor over the XML source.
    *
-   * @return MigrateXMLReader
-   *   MigrateXMLReader
+   * @return XMLReader
+   *   XMLReader
    */
   public function getReader() {
     return $this->reader;
@@ -92,7 +92,7 @@ class Xml extends SourcePluginBase {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $migration);
 
     if (empty($configuration['iterator_class'])) {
-      $iterator_class = '\Drupal\migrate_source_xml\Plugin\migrate\source\MigrateXmlIterator';
+      $iterator_class = '\Drupal\migrate_source_xml\Plugin\migrate\source\XmlIterator';
     }
     else {
       $iterator_class = $configuration['iterator_class'];

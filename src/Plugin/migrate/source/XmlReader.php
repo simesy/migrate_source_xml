@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains Drupal\migrate_source_xml\Plugin\migrate\source\MigrateXmlReader.
+ * Contains Drupal\migrate_source_xml\Plugin\migrate\source\XmlReader.
  */
 
 namespace Drupal\migrate_source_xml\Plugin\migrate\source;
@@ -12,7 +12,7 @@ use Drupal\migrate\MigrateException;
 /**
  * Makes an XMLReader object iterable over elements matching xpath-like syntax.
  */
-class MigrateXmlReader implements \Iterator {
+class XmlReader implements \Iterator {
 
   /**
    * The XMLReader we are encapsulating.
@@ -308,7 +308,7 @@ class MigrateXmlReader implements \Iterator {
    *
    * Gets the SimpleXMLElement some number of levels above the iterator
    * having the given name, but only for element names that this
-   * MigrateXmlReader was told to retain for future reference through the
+   * XmlReader was told to retain for future reference through the
    * constructor's $parent_elements_of_interest.
    *
    * @param int $levels_up
