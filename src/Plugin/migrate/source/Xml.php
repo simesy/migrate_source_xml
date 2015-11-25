@@ -8,7 +8,7 @@
 namespace Drupal\migrate_source_xml\Plugin\migrate\source;
 
 use Drupal\migrate\Entity\MigrationInterface;
-use Drupal\migrate\Plugin\migrate\source\SourcePluginBase;
+use Drupal\migrate_plus\Plugin\migrate\source\Url;
 
 /**
  * Source plugin for retrieving XML data.
@@ -17,7 +17,8 @@ use Drupal\migrate\Plugin\migrate\source\SourcePluginBase;
  *   id = "xml"
  * )
  */
-class Xml extends SourcePluginBase {
+class Xml extends Url {
+
   /**
    * The iterator object to employ while processing the source.
    *
@@ -34,13 +35,6 @@ class Xml extends SourcePluginBase {
   public function getReader() {
     return $this->reader;
   }
-
-  /**
-   * The source URLs to load XML from.
-   *
-   * @var array
-   */
-  protected $sourceUrls = [];
 
   /**
    * An array of namespaces to explicitly register before Xpath queries.
@@ -66,26 +60,6 @@ class Xml extends SourcePluginBase {
   protected $iteratorClass = '';
 
   /**
-   * Information on the source fields to be extracted from the XML.
-   *
-   * @var array[]
-   *   Array of field information keyed by field names. A 'label' subkey
-   *   describes the field for migration tools; an 'xpath' subkey provides the
-   *   xpath (relative to the individual item) for obtaining the value.
-   */
-  protected $fields = [];
-
-  /**
-   * Description of the unique ID fields for this source.
-   *
-   * @var array[]
-   *   Each array member is keyed by a field name, with a value that is an
-   *   array with a single member with key 'type' and value a column type such
-   *   as 'integer'.
-   */
-  protected $ids = [];
-
-  /**
    * {@inheritdoc}
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration, array $namespaces = []) {
@@ -98,18 +72,10 @@ class Xml extends SourcePluginBase {
       $iterator_class = $configuration['iterator_class'];
     }
 
-    if (!is_array($configuration['urls'])) {
-      $configuration['urls'] = [$configuration['urls']];
-    }
-
-    $this->sourceUrls = $configuration['urls'];
-    $this->activeUrl = NULL;
     $this->elementQuery = $configuration['item_xpath'];
     $this->idQuery = $configuration['id_query'];
     $this->iteratorClass = $iterator_class;
     $this->namespaces = $namespaces;
-    $this->fields = $configuration['fields'];
-    $this->ids = $configuration['ids'];
   }
 
   /**
@@ -125,22 +91,6 @@ class Xml extends SourcePluginBase {
   }
 
   /**
-   * Return a string representing the source query.
-   *
-   * @return string
-   *   source query
-   */
-  public function __toString() {
-    // Clump the urls into a string
-    // This could cause a problem when using
-    // a lot of urls, may need to hash.
-    $urls = implode(', ', $this->sourceUrls);
-    return 'urls = ' . $urls .
-           ' | item xpath = ' . $this->elementQuery .
-           ' | item ID xpath = ' . $this->idQuery;
-  }
-
-  /**
    * Gets the iterator class used to traverse the XML.
    *
    * @return string
@@ -148,16 +98,6 @@ class Xml extends SourcePluginBase {
    */
   public function iteratorClass() {
     return $this->iteratorClass;
-  }
-
-  /**
-   * Gets the source URLs where the XML is located.
-   *
-   * @return array
-   *   Array of URLs
-   */
-  public function sourceUrls() {
-    return $this->sourceUrls;
   }
 
   /**
@@ -210,24 +150,6 @@ class Xml extends SourcePluginBase {
    */
   public function namespaces() {
     return [];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function fields() {
-    $fields = [];
-    foreach ($fields as $field_name => $field_info) {
-      $fields[$field_name] = isset($field_info['label']) ? $field_info['label'] : $field_name;
-    }
-    return $fields;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getIds() {
-    return $this->ids;
   }
 
   /**
