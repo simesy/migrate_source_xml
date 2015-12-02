@@ -85,7 +85,7 @@ class XmlReader implements \Iterator {
    *
    * @var string
    */
-  public $elementQuery;
+  public $itemSelector;
 
   /**
    * Current element object when iterating.
@@ -132,10 +132,10 @@ class XmlReader implements \Iterator {
    *   so that they are available from getAncestorElement(). For efficiency, try
    *   to limit these to elements containing just text or small structures.
    */
-  public function __construct($xml_url, Xml $xml_source, $element_query, $parent_elements_of_interest = []) {
+  public function __construct($xml_url, Xml $xml_source, $item_selector, $parent_elements_of_interest = []) {
     $this->reader = new \XMLReader();
     $this->url = $xml_url;
-    $this->elementQuery = $element_query;
+    $this->itemSelector = $item_selector;
     $this->xmlSource = $xml_source;
     $this->parentElementsOfInterest = array_flip($parent_elements_of_interest);
 
@@ -144,7 +144,7 @@ class XmlReader implements \Iterator {
 
     // Parse the element query. First capture group is the element path, second
     // (if present) is the attribute.
-    preg_match_all('|^/([^\[]+)\[?(.*?)]?$|', $element_query, $matches);
+    preg_match_all('|^/([^\[]+)\[?(.*?)]?$|', $item_selector, $matches);
     $element_path = $matches[1][0];
     $this->elementsToMatch = explode('/', $element_path);
     $predicate = $matches[2][0];
@@ -265,7 +265,7 @@ class XmlReader implements \Iterator {
     }
 
     if ($target_element) {
-      foreach ($this->xmlSource->fieldXpaths() as $field_name => $xpath) {
+      foreach ($this->xmlSource->fieldSelectors() as $field_name => $xpath) {
         foreach ($target_element->xpath($xpath) as $value) {
           $this->currentElement[$field_name] = (string) $value;
         }
