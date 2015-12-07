@@ -132,12 +132,11 @@ class XmlReader implements \Iterator {
    *   so that they are available from getAncestorElement(). For efficiency, try
    *   to limit these to elements containing just text or small structures.
    */
-  public function __construct($xml_url, Xml $xml_source, $item_selector, $parent_elements_of_interest = []) {
+  public function __construct($xml_url, Xml $xml_source, $item_selector) {
     $this->reader = new \XMLReader();
     $this->url = $xml_url;
     $this->itemSelector = $item_selector;
     $this->xmlSource = $xml_source;
-    $this->parentElementsOfInterest = array_flip($parent_elements_of_interest);
 
     // Suppress errors during parsing, so we can pick them up after.
     libxml_use_internal_errors(TRUE);
@@ -157,6 +156,12 @@ class XmlReader implements \Iterator {
     // name in next().
     if (strpos($element_path, ':')) {
       $this->prefixedName = TRUE;
+    }
+
+    foreach ($this->xmlSource->fieldSelectors() as $field_name => $xpath) {
+      if (substr($xpath, 0, 3) === '..\\') {
+        $this->parentElementsOfInterest[] = str_replace('..\\', '', $xpath);
+      }
     }
   }
 

@@ -32,10 +32,6 @@ class Xml extends Url {
   public function __construct(array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $migration);
 
-    if (empty($this->iteratorClass)) {
-      $this->iteratorClass = '\Drupal\migrate_source_xml\Plugin\migrate\source\XmlIterator';
-    }
-
     if (empty($this->readerClass)) {
       $this->readerClass = '\Drupal\migrate_source_xml\Plugin\migrate\source\XmlReader';
     }
