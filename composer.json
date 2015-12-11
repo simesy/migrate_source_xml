@@ -1,0 +1,9 @@
+{
+    "name": "drupal/migrate_source_xml",
+    "description": "Migration plugin for XML sources",
+    "type": "drupal-module",
+    "require": {
+        "drupal/migrate": "8.*"
+    },
+    "license": "GPL2"
+}
