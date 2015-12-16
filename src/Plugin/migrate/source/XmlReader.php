@@ -85,21 +85,24 @@ class XmlReader extends UrlReader {
   protected $prefixedName = FALSE;
 
   /**
+   * An array of namespaces to explicitly register before Xpath queries.
+   *
+   * @var array
+   */
+  protected $namespaces = [];
+
+  /**
    * Prepares our extensions to the XMLReader object.
    *
-   * @param string $xml_url
+   * @param string[] $urls
    *   URL of the XML file to be parsed.
    * @param \Drupal\migrate_source_xml\Plugin\migrate\source\Xml $xml_source
    *   The xml source plugin.
-   * @param string $element_query
+   * @param string $item_selector
    *   Query string in a restricted xpath format, for selecting elements to be.
-   * @param array $parent_elements_of_interest
-   *   Named elements that should be preserved whenever they are encountered,
-   *   so that they are available from getAncestorElement(). For efficiency, try
-   *   to limit these to elements containing just text or small structures.
    */
-  public function __construct($xml_url, Xml $xml_source, $item_selector) {
-    parent::__construct($xml_url, $xml_source, $item_selector);
+  public function __construct($urls, Xml $xml_source, $item_selector) {
+    parent::__construct($urls, $xml_source, $item_selector);
     $this->reader = new \XMLReader();
 
     // Suppress errors during parsing, so we can pick them up after.
@@ -126,27 +129,6 @@ class XmlReader extends UrlReader {
       if (substr($xpath, 0, 3) === '..\\') {
         $this->parentElementsOfInterest[] = str_replace('..\\', '', $xpath);
       }
-    }
-  }
-
-  /**
-   * Implementation of Iterator::rewind().
-   */
-  public function rewind() {
-    // (Re)open the provided URL.
-    $this->reader->close();
-    $status = $this->reader->open($this->url, NULL, \LIBXML_NOWARNING);
-
-    // Reset our path tracker.
-    $this->currentPath = [];
-
-    if ($status) {
-      // Load the first matching element and its ID.
-      $this->next();
-    }
-    else {
-      throw new MigrateException(t('Could not open XML file @url',
-        ['@url' => $this->url]), 'error');
     }
   }
 
@@ -185,10 +167,25 @@ class XmlReader extends UrlReader {
   }
 
   /**
+   * Implementation of Iterator::rewind().
+   */
+  public function rewind() {
+    // Reset our path tracker.
+    $this->currentPath = [];
+    parent::rewind();
+  }
+
+  protected function openSourceUrl($url) {
+    // (Re)open the provided URL.
+    $this->reader->close();
+    return $this->reader->open($url, NULL, \LIBXML_NOWARNING);
+  }
+
+  /**
    * Implementation of Iterator::next().
    */
-  public function next() {
-    $this->currentElement = $this->currentId = NULL;
+  protected function fetchNextRow() {
+//    $this->currentElement = $this->currentId = NULL;
     $target_element = NULL;
 
     // Loop over each node in the XML file, looking for elements at a path
@@ -304,7 +301,7 @@ class XmlReader extends UrlReader {
    *   The element to apply namespace registrations to.
    */
   protected function registerNamespaces(\SimpleXMLElement $xml) {
-    foreach ($this->urlSource->namespaces() as $prefix => $ns) {
+    foreach ($this->namespaces as $prefix => $ns) {
       $xml->registerXPathNamespace($prefix, $ns);
     }
   }
