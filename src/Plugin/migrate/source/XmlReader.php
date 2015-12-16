@@ -8,11 +8,12 @@
 namespace Drupal\migrate_source_xml\Plugin\migrate\source;
 
 use Drupal\migrate\MigrateException;
+use Drupal\migrate_plus\Plugin\migrate\source\UrlReader;
 
 /**
  * Makes an XMLReader object iterable over elements matching xpath-like syntax.
  */
-class XmlReader implements \Iterator {
+class XmlReader extends UrlReader {
 
   /**
    * The XMLReader we are encapsulating.
@@ -20,13 +21,6 @@ class XmlReader implements \Iterator {
    * @var \XMLReader
    */
   public $reader;
-
-  /**
-   * URL of the source XML file.
-   *
-   * @var string
-   */
-  public $url;
 
   /**
    * Array of the element names from the query.
@@ -81,27 +75,6 @@ class XmlReader implements \Iterator {
   protected $parentElementsOfInterest = [];
 
   /**
-   * Query string used to retrieve the elements from the XML file.
-   *
-   * @var string
-   */
-  public $itemSelector;
-
-  /**
-   * Current element object when iterating.
-   *
-   * @var \SimpleXMLElement
-   */
-  protected $currentElement = NULL;
-
-  /**
-   * Value of the ID for the current element when iterating.
-   *
-   * @var string
-   */
-  protected $currentId = NULL;
-
-  /**
    * Element name matching mode.
    *
    * When matching element names, whether to compare to the namespace-prefixed
@@ -112,32 +85,25 @@ class XmlReader implements \Iterator {
   protected $prefixedName = FALSE;
 
   /**
-   * Reference to the XmlBase source plugin we are serving as iterator for.
+   * An array of namespaces to explicitly register before Xpath queries.
    *
-   * @var \Drupal\migrate_source_xml\Plugin\migrate\source\Xml
+   * @var array
    */
-  protected $xmlSource;
+  protected $namespaces = [];
 
   /**
    * Prepares our extensions to the XMLReader object.
    *
-   * @param string $xml_url
+   * @param string[] $urls
    *   URL of the XML file to be parsed.
    * @param \Drupal\migrate_source_xml\Plugin\migrate\source\Xml $xml_source
    *   The xml source plugin.
-   * @param string $element_query
+   * @param string $item_selector
    *   Query string in a restricted xpath format, for selecting elements to be.
-   * @param array $parent_elements_of_interest
-   *   Named elements that should be preserved whenever they are encountered,
-   *   so that they are available from getAncestorElement(). For efficiency, try
-   *   to limit these to elements containing just text or small structures.
    */
-  public function __construct($xml_url, Xml $xml_source, $item_selector, $parent_elements_of_interest = []) {
+  public function __construct($urls, Xml $xml_source, $item_selector) {
+    parent::__construct($urls, $xml_source, $item_selector);
     $this->reader = new \XMLReader();
-    $this->url = $xml_url;
-    $this->itemSelector = $item_selector;
-    $this->xmlSource = $xml_source;
-    $this->parentElementsOfInterest = array_flip($parent_elements_of_interest);
 
     // Suppress errors during parsing, so we can pick them up after.
     libxml_use_internal_errors(TRUE);
@@ -158,26 +124,11 @@ class XmlReader implements \Iterator {
     if (strpos($element_path, ':')) {
       $this->prefixedName = TRUE;
     }
-  }
 
-  /**
-   * Implementation of Iterator::rewind().
-   */
-  public function rewind() {
-    // (Re)open the provided URL.
-    $this->reader->close();
-    $status = $this->reader->open($this->url, NULL, \LIBXML_NOWARNING);
-
-    // Reset our path tracker.
-    $this->currentPath = [];
-
-    if ($status) {
-      // Load the first matching element and its ID.
-      $this->next();
-    }
-    else {
-      throw new MigrateException(t('Could not open XML file @url',
-        ['@url' => $this->url]), 'error');
+    foreach ($this->urlSource->fieldSelectors() as $field_name => $xpath) {
+      if (substr($xpath, 0, 3) === '..\\') {
+        $this->parentElementsOfInterest[] = str_replace('..\\', '', $xpath);
+      }
     }
   }
 
@@ -216,10 +167,25 @@ class XmlReader implements \Iterator {
   }
 
   /**
+   * Implementation of Iterator::rewind().
+   */
+  public function rewind() {
+    // Reset our path tracker.
+    $this->currentPath = [];
+    parent::rewind();
+  }
+
+  protected function openSourceUrl($url) {
+    // (Re)open the provided URL.
+    $this->reader->close();
+    return $this->reader->open($url, NULL, \LIBXML_NOWARNING);
+  }
+
+  /**
    * Implementation of Iterator::next().
    */
-  public function next() {
-    $this->currentElement = $this->currentId = NULL;
+  protected function fetchNextRow() {
+//    $this->currentElement = $this->currentId = NULL;
     $target_element = NULL;
 
     // Loop over each node in the XML file, looking for elements at a path
@@ -265,12 +231,12 @@ class XmlReader implements \Iterator {
     }
 
     if ($target_element) {
-      foreach ($this->xmlSource->fieldSelectors() as $field_name => $xpath) {
+      foreach ($this->urlSource->fieldSelectors() as $field_name => $xpath) {
         foreach ($target_element->xpath($xpath) as $value) {
           $this->currentElement[$field_name] = (string) $value;
         }
       }
-      foreach ($this->xmlSource->getIds() as $id_field_name => $id_info) {
+      foreach ($this->urlSource->getIds() as $id_field_name => $id_info) {
         $this->currentId[$id_field_name] = $this->currentElement[$id_field_name];
       }
     }
@@ -291,16 +257,6 @@ class XmlReader implements \Iterator {
    */
   protected function predicateMatches(\SimpleXMLElement $elem) {
     return !empty($elem->xpath('/*[' . $this->xpathPredicate . ']'));
-  }
-
-  /**
-   * Implementation of Iterator::current().
-   *
-   * @return \SimpleXMLElement|null
-   *   Current item
-   */
-  public function current() {
-    return $this->currentElement;
   }
 
   /**
@@ -339,33 +295,13 @@ class XmlReader implements \Iterator {
   }
 
   /**
-   * Implementation of Iterator::key().
-   *
-   * @return null|string
-   *   Current key
-   */
-  public function key() {
-    return $this->currentId;
-  }
-
-  /**
-   * Implementation of Iterator::valid().
-   *
-   * @return bool
-   *   Indicates if current element is valid
-   */
-  public function valid() {
-    return $this->currentElement;
-  }
-
-  /**
    * Registers the iterator's namespaces to a SimpleXMLElement.
    *
    * @param \SimpleXMLElement $xml
    *   The element to apply namespace registrations to.
    */
   protected function registerNamespaces(\SimpleXMLElement $xml) {
-    foreach ($this->xmlSource->namespaces() as $prefix => $ns) {
+    foreach ($this->namespaces as $prefix => $ns) {
       $xml->registerXPathNamespace($prefix, $ns);
     }
   }
