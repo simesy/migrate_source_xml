@@ -26,7 +26,7 @@ class XmlReader extends ReaderPluginBase implements ContainerFactoryPluginInterf
    *
    * @var \XMLReader
    */
-  public $reader;
+  protected $reader;
 
   /**
    * Array of the element names from the query.
@@ -91,17 +91,11 @@ class XmlReader extends ReaderPluginBase implements ContainerFactoryPluginInterf
   protected $prefixedName = FALSE;
 
   /**
-   * An array of namespaces to explicitly register before Xpath queries.
-   *
-   * @var array
-   */
-  protected $namespaces = [];
-
-  /**
    * {@inheritdoc}
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
+
     $this->reader = new \XMLReader();
 
     // Suppress errors during parsing, so we can pick them up after.
@@ -146,10 +140,8 @@ class XmlReader extends ReaderPluginBase implements ContainerFactoryPluginInterf
   protected function getSimpleXml() {
     $node = $this->reader->expand();
     if ($node) {
-      // We must associate the DOMNode with a
-      // DOMDocument to be able to import
-      // it into SimpleXML.
-      // Despite appearances, this is almost twice as fast as
+      // We must associate the DOMNode with a DOMDocument to be able to import
+      // it into SimpleXML. Despite appearances, this is almost twice as fast as
       // simplexml_load_string($this->readOuterXML());
       $dom = new \DOMDocument();
       $node = $dom->importNode($node, TRUE);
@@ -168,7 +160,7 @@ class XmlReader extends ReaderPluginBase implements ContainerFactoryPluginInterf
   }
 
   /**
-   * Implementation of Iterator::rewind().
+   * {@inheritdoc}
    */
   public function rewind() {
     // Reset our path tracker.
@@ -176,6 +168,9 @@ class XmlReader extends ReaderPluginBase implements ContainerFactoryPluginInterf
     parent::rewind();
   }
 
+  /**
+   * {@inheritdoc}
+   */
   protected function openSourceUrl($url) {
     // (Re)open the provided URL.
     $this->reader->close();
@@ -183,7 +178,7 @@ class XmlReader extends ReaderPluginBase implements ContainerFactoryPluginInterf
   }
 
   /**
-   * Implementation of Iterator::next().
+   * {@inheritdoc}
    */
   protected function fetchNextRow() {
     $target_element = NULL;
@@ -230,6 +225,8 @@ class XmlReader extends ReaderPluginBase implements ContainerFactoryPluginInterf
       }
     }
 
+    // If we've found the desired element, populate the currentItem and
+    // currentId with its data.
     if ($target_element) {
       foreach ($this->fieldSelectors() as $field_name => $xpath) {
         foreach ($target_element->xpath($xpath) as $value) {
@@ -301,8 +298,10 @@ class XmlReader extends ReaderPluginBase implements ContainerFactoryPluginInterf
    *   The element to apply namespace registrations to.
    */
   protected function registerNamespaces(\SimpleXMLElement $xml) {
-    foreach ($this->namespaces as $prefix => $ns) {
-      $xml->registerXPathNamespace($prefix, $ns);
+    if (is_array($this->configuration['namespaces'])) {
+      foreach ($this->configuration['namespaces'] as $prefix => $ns) {
+        $xml->registerXPathNamespace($prefix, $ns);
+      }
     }
   }
 
