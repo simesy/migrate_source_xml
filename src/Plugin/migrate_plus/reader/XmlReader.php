@@ -298,8 +298,10 @@ class XmlReader extends ReaderPluginBase implements ContainerFactoryPluginInterf
    *   The element to apply namespace registrations to.
    */
   protected function registerNamespaces(\SimpleXMLElement $xml) {
-    foreach ($this->configuration['namespaces'] as $prefix => $ns) {
-      $xml->registerXPathNamespace($prefix, $ns);
+    if (is_array($this->configuration['namespaces'])) {
+      foreach ($this->configuration['namespaces'] as $prefix => $ns) {
+        $xml->registerXPathNamespace($prefix, $ns);
+      }
     }
   }
 
