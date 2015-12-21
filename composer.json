@@ -3,7 +3,7 @@
     "description": "Migration plugin for XML sources",
     "type": "drupal-module",
     "require": {
-        "drupal/migrate": "8.*"
+        "drupal/migrate_plus": "dev-8.x-1.x"
     },
     "license": "GPL2"
 }
