@@ -230,7 +230,14 @@ class XmlReader extends ReaderPluginBase implements ContainerFactoryPluginInterf
     if ($target_element) {
       foreach ($this->fieldSelectors() as $field_name => $xpath) {
         foreach ($target_element->xpath($xpath) as $value) {
-          $this->currentItem[$field_name] = (string) $value;
+          // If the SimpleXMLElement doesn't render to a string of any sort, and has children
+          // then return the whole object for the process plugin or other row manipulation.
+          if ($value->children() && !trim((string)$value)) {
+            $this->currentItem[$field_name] = $value;
+          }
+          else {
+            $this->currentItem[$field_name] = (string)$value;
+          }
         }
       }
       foreach ($this->configuration['ids'] as $id_field_name => $id_info) {
